@@ -1,0 +1,58 @@
+version: '3'
+services:
+  nginx-server:
+    image: nginx
+    ports:
+      - "3000:80"
+    volumes:
+      - "./nginx/default.conf:/etc/nginx/nginx.conf"
+  node-app-1:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+      args:
+        NODE_ENV: production
+    env_file:
+      - ./.env.production
+    environment:
+      - PORT=3001
+    command: yarn start
+    depends_on:
+      - mongo
+  node-app-2:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+      args:
+        NODE_ENV: production
+    env_file:
+      - ./.env.production
+    environment:
+      - PORT=3002
+    command: yarn start
+    depends_on:
+      - mongo
+  node-app-3:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+      args:
+        NODE_ENV: production
+    env_file:
+      - ./.env.production
+    environment:
+      - PORT=3003
+    command: yarn start
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-db:/data/db
+    env_file:
+      - ./.env.production
+    restart: always
+volumes:
+  mongo-db:

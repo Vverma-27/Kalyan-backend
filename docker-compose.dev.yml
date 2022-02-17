@@ -1,0 +1,29 @@
+version: '3'
+services:
+  node-app:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+      args:
+        NODE_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./:/app"
+      - "/app/node_modules"
+    env_file:
+      - ./.env.development
+    command: yarn dev
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-db:/data/db
+    env_file:
+      - ./.env.development
+    restart: always
+volumes:
+  mongo-db:
