@@ -18,9 +18,31 @@ class DonationController {
       authDecode,
       this.getLoggedInUserDonations
     );
-    // this.router.get(`${this.route}/:id`, this.getDonationById);
+    this.router.get(`${this.route}/:id`, this.getDonationOfStudent);
     this.router.post(`${this.route}/:id`, authDecode, this.donateToStudent);
   }
+  private getDonationOfStudent = async (
+    req: express.Request,
+    res: express.Response
+  ) => {
+    try {
+      const donations = await Donation.find({
+        //@ts-ignore
+        to: req.params.id,
+      })
+        .limit(10)
+        //@ts-ignore
+        .skip(parseInt(req.query.page) * 10);
+      const totalCount: number = await Donation.countDocuments({
+        //@ts-ignore
+        to: req.params.id,
+      });
+      console.log(donations);
+      res.json({ donations, results: totalCount });
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  };
   private donateToStudent = async (
     req: express.Request,
     res: express.Response
