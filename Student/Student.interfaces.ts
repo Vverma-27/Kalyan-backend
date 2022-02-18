@@ -9,18 +9,20 @@ export interface IStudent {
       age: number;
       occupation: string;
       income: number;
+      phone: number;
     };
     mother: {
       name: string;
       age: number;
       occupation: string;
       income: number;
+      phone: number;
     };
   };
   teacherRemarks: string;
   achievements: string[];
   hobbies: string[];
-  donations: mongoose.Types.ObjectId[];
+  donatedAmount: number;
   address: {
     city: string;
     state: string;

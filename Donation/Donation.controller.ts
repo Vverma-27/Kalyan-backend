@@ -3,6 +3,7 @@ import razorPayInstance from "../config/razorpay";
 import Student from "../Student/Student.model";
 import { v4 as uuidv4 } from "uuid";
 import Donation from "./Donation.model";
+import authDecode from "../middleware/authMiddleware";
 class DonationController {
   private router: express.Router;
   private route = "/donations";
@@ -12,8 +13,13 @@ class DonationController {
   }
   private initializeRoutes() {
     this.router.get(this.route, this.getAllDonations);
-    this.router.get(`${this.route}/:id`, this.getDonationById);
-    this.router.post(`${this.route}/:id`, this.donateToStudent);
+    this.router.get(
+      `${this.route}/me`,
+      authDecode,
+      this.getLoggedInUserDonations
+    );
+    // this.router.get(`${this.route}/:id`, this.getDonationById);
+    this.router.post(`${this.route}/:id`, authDecode, this.donateToStudent);
   }
   private donateToStudent = async (
     req: express.Request,
@@ -37,10 +43,32 @@ class DonationController {
         to: req.params.id,
         date: order.created_at,
       });
-      student.donations.push(donation.id);
       res.json({ student, donation });
     } catch (err) {
       res.status(500).send(err);
+    }
+  };
+  private getLoggedInUserDonations = async (
+    req: express.Request,
+    res: express.Response
+  ) => {
+    try {
+      const donations = await Donation.find({
+        //@ts-ignore
+        from: req.user.id,
+      })
+        .limit(10)
+        //@ts-ignore
+        .skip(parseInt(req.query.page) * 10);
+      const totalCount: number = await Donation.countDocuments({
+        //@ts-ignore
+        from: req.user.id,
+      });
+      console.log(donations);
+      res.json({ donations, results: totalCount });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ msg: err });
     }
   };
   private getAllDonations = async (

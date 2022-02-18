@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import { IUser } from "./User.interfaces";
+import { badges, IUser } from "./User.interfaces";
 
 const UserSchema = new Schema<IUser>({
   name: {
@@ -20,8 +20,8 @@ const UserSchema = new Schema<IUser>({
     type: Number,
   },
   profilePicture: { type: String, required: true },
-  amountDonated: { type: Number },
-  badge: { type: String },
+  amountDonated: { type: Number, default: 0 },
+  badge: { type: Number, default: 0 },
 });
 
 const User = model<IUser>("User", UserSchema);

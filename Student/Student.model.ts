@@ -17,12 +17,14 @@ const StudentSchema = new Schema<IStudent>({
       age: { type: Number, required: true },
       occupation: { type: String, required: true },
       income: { type: Number, required: true },
+      phone: { type: Number, required: true },
     },
     mother: {
       name: { type: String, required: true },
       age: { type: Number, required: true },
       occupation: { type: String, required: true },
       income: { type: Number, required: true },
+      phone: { type: Number, required: true },
     },
   },
   teacherRemarks: { type: String, required: true },
@@ -35,7 +37,7 @@ const StudentSchema = new Schema<IStudent>({
     pincode: { type: Number, required: true },
   },
   phone: { type: Number, required: true },
-  donations: [{ type: Schema.Types.ObjectId, ref: "Donation" }],
+  donatedAmount: { type: Number, default: 0 },
 });
 
 const Student = model<IStudent>("Student", StudentSchema);

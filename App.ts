@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import config from "./config";
 import app from "./config/firebase-admin";
 import cors from "cors";
+import upload from "./config/multer";
 import authDecode from "./middleware/authMiddleware";
 class App {
   private app: express.Application;
@@ -26,8 +27,9 @@ class App {
       });
     console.log(app);
     this.app.use(cors());
+    this.app.use(upload.single("file"));
     this.app.use(express.json());
-    this.app.use(authDecode);
+    // this.app.use(authDecode);
   }
   private initializeControllers(controllers: any) {
     controllers.forEach((controller: any) => {
