@@ -1,9 +1,9 @@
 import express from "express";
 import razorPayInstance from "../config/razorpay";
-import Student from "../Student/Student.model";
 import { v4 as uuidv4 } from "uuid";
 import Donation from "./Donation.model";
-import authDecode from "../middleware/authMiddleware";
+import crypto from "crypto";
+
 class DonationController {
   private router: express.Router;
   private route = "/donations";
@@ -13,86 +13,165 @@ class DonationController {
   }
   private initializeRoutes() {
     this.router.get(this.route, this.getAllDonations);
-    this.router.get(
-      `${this.route}/me`,
-      authDecode,
-      this.getLoggedInUserDonations
-    );
-    this.router.get(`${this.route}/:id`, this.getDonationOfStudent);
-    this.router.post(`${this.route}/:id`, authDecode, this.donateToStudent);
+    this.router.post(`${this.route}/verification`, this.verifyPayment);
+    this.router.post(`${this.route}`, this.createDonationRequest);
   }
-  private getDonationOfStudent = async (
+  private createDonationRequest = async (
     req: express.Request,
     res: express.Response
   ) => {
     try {
-      const donations = await Donation.find({
-        //@ts-ignore
-        to: req.params.id,
-      })
-        .limit(10)
-        //@ts-ignore
-        .skip(parseInt(req.query.page) * 10);
-      const totalCount: number = await Donation.countDocuments({
-        //@ts-ignore
-        to: req.params.id,
-      });
-      console.log(donations);
-      res.json({ donations, results: totalCount });
-    } catch (err) {
-      res.status(500).send(err);
-    }
-  };
-  private donateToStudent = async (
-    req: express.Request,
-    res: express.Response
-  ) => {
-    try {
-      const student = await Student.findById(req.params.id);
-      if (!student) {
-        return res.status(404).send("Student not found");
+      //@ts-ignore
+      let { amount, frequency, identifier } = req.body;
+      amount = parseInt(amount);
+      console.log(amount);
+      if (frequency === "one-time") {
+        const order = await razorPayInstance.orders.create({
+          amount: amount * 100,
+          currency: "INR",
+          receipt: uuidv4(),
+        });
+        const donation = await Donation.create({
+          transactionId: order.id,
+          amount: order.amount,
+          type: "o",
+          // identifier,
+        });
+        res.json({
+          order_id: order.id,
+          amount: order.amount,
+          currency: order.currency,
+          id: donation.id,
+        });
+        // await Donation.create({
+        //   date: new Date(order.created_at),
+        //   amount: order.amount / 100,
+        //   receiptId: order.receipt,
+        //   orderId: order.id,
+        //   verified: false,
+        // });
+      } else {
+        const plan = await razorPayInstance.plans.create({
+          period: frequency,
+          interval: 1,
+          item: {
+            name: "New plan",
+            amount: amount * 100,
+            currency: "INR",
+          },
+        });
+        console.log("plan ", plan);
+        const subs = await razorPayInstance.subscriptions.create({
+          plan_id: plan.id,
+          customer_notify: 1,
+          quantity: 1,
+          total_count: 1,
+        });
+        const donation = await Donation.create({
+          transactionId: subs.id,
+          amount,
+          type: "r",
+          // identifier,
+        });
+        res.json({
+          subscription_id: subs.id,
+          amount: amount,
+          currency: "INR",
+          id: donation.id,
+        });
+        // await Donation.create({
+        //   date: new Date(subs.created_at),
+        //   amount: amount,
+        //   subscriptionId: subs.id,
+        //   verified: false,
+        // });
       }
-      var options = {
-        amount: req.body.amount, // amount in the smallest currency unit
-        currency: "INR",
-        receipt: uuidv4(),
-      };
-      const order = await razorPayInstance.orders.create(options);
-      console.log(order);
-      const donation = await Donation.create({
-        from: "anonymous",
-        amount: order.amount,
-        to: req.params.id,
-        date: order.created_at,
-      });
-      res.json({ student, donation });
-    } catch (err) {
-      res.status(500).send(err);
-    }
-  };
-  private getLoggedInUserDonations = async (
-    req: express.Request,
-    res: express.Response
-  ) => {
-    try {
-      const donations = await Donation.find({
-        //@ts-ignore
-        from: req.user.id,
-      })
-        .limit(10)
-        //@ts-ignore
-        .skip(parseInt(req.query.page) * 10);
-      const totalCount: number = await Donation.countDocuments({
-        //@ts-ignore
-        from: req.user.id,
-      });
-      console.log(donations);
-      res.json({ donations, results: totalCount });
+      // console.log(order);
     } catch (err) {
       console.log(err);
-      res.status(500).json({ msg: err });
+      res.status(500).send(err);
     }
   };
+  private verifyPayment = async (
+    req: express.Request,
+    res: express.Response
+  ) => {
+    const generated_signature = crypto.createHmac(
+      "sha256",
+      process.env.RAZORPAY_KEY_SECRET
+    );
+    const donation = await Donation.findById(req.body.id);
+    console.log(
+      donation.transactionId,
+      donation,
+      donation.transactionId === req.body.razorpay_order_id,
+      req.body.razorpay_order_id
+    );
+    if (donation.type === "o")
+      generated_signature.update(
+        donation.transactionId + "|" + req.body.razorpay_payment_id
+      );
+    else
+      generated_signature.update(
+        req.body.razorpay_payment_id + "|" + donation.transactionId
+      );
+    const expected = generated_signature.digest("hex");
+    console.log(expected);
+    // console.log(
+    //   generated_signature.digest("hex").toString() ===
+    //     req.body.razorpay_signature
+    //   // generated_signature_1.digest()
+    // );
+    // console.log(generated_signature.digest("hex")[0]);
+    // for (let index in req.body.razorpay_signature) {
+    //   if (
+    //     req.body.razorpay_signature[index] !==
+    //     generated_signature.digest("hex")[index]
+    //   )
+    //     console.log(
+    //       "not equal ",
+    //       index,
+    //       req.body.razorpay_signature[index],
+    //       generated_signature.digest("hex")[index]
+    //     );
+    // }
+    if (expected === req.body.razorpay_signature) {
+      // const transaction = new Transaction({
+      //   transactionid: req.body.transactionid,
+      //   transactionamount: req.body.transactionamount,
+      // })
+      donation.verified = true;
+      await donation.save();
+      // await Donation.create({
+      //   transactionId: req.body.transactionid,
+      //   amount: req.body.transactionamount,
+      // });
+      return res.json({ success: true });
+      // transaction.save(function (err, savedtransac) {
+      //   if (err) {
+      //     console.log(err);
+      //     return res.status(500).send("Some Problem Occured");
+      //   }
+      //   res.send({ transaction: savedtransac });
+      // });
+      // return res.send('success');
+    } else {
+      return res.json({ success: false });
+    }
+  };
+  // private verifyPayment = async (req, res) => {
+  //   const resp = razorPayInstance.payments.paymentVerification(
+  //     {
+  //       subscription_id: "sub_ID6MOhgkcoHj9I",
+  //       payment_id: "pay_IDZNwZZFtnjyym",
+  //       signature:
+  //         "601f383334975c714c91a7d97dd723eb56520318355863dcf3821c0d07a17693",
+  //     },
+  //     process.env.RAZORPAY_KEY_SECRET
+  //   );
+  //   console.log(resp);
+  //   res.json({ success: true });
+  // };
   private getAllDonations = async (
     req: express.Request,
     res: express.Response
@@ -103,20 +182,6 @@ class DonationController {
       res.json({ donations });
     } catch (err) {
       console.log(err);
-      res.status(500).send(err);
-    }
-  };
-  private getDonationById = async (
-    req: express.Request,
-    res: express.Response
-  ) => {
-    try {
-      const donation = await Donation.findById(req.params.id);
-      if (!donation) {
-        return res.status(404).send("Donation not found");
-      }
-      res.json({ donation });
-    } catch (err) {
       res.status(500).send(err);
     }
   };

@@ -1,10 +1,7 @@
 import express from "express";
-import mongoose from "mongoose";
 import config from "./config";
-import app from "./config/firebase-admin";
 import cors from "cors";
-import upload from "./config/multer";
-import authDecode from "./middleware/authMiddleware";
+import mongoose from "mongoose";
 class App {
   private app: express.Application;
   private port: number;
@@ -25,9 +22,8 @@ class App {
       .catch((err) => {
         console.log(err);
       });
-    console.log(app);
+    // console.log(app);
     this.app.use(cors());
-    this.app.use(upload.single("file"));
     this.app.use(express.json());
     // this.app.use(authDecode);
   }

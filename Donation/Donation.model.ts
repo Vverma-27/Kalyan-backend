@@ -2,22 +2,14 @@ import { model, Schema } from "mongoose";
 import { IDonation } from "./Donation.interfaces";
 
 const DonationSchema = new Schema<IDonation>({
-  from: {
-    type: Schema.Types.Mixed,
-    required: true,
-  },
-  to: {
-    type: Schema.Types.ObjectId,
-    required: true,
-  },
   amount: {
     type: Number,
     required: true,
   },
-  date: {
-    type: Date,
-    required: true,
-  },
+  transactionId: { type: String, required: true },
+  type: { type: String, required: true },
+  // identifier: { type: String, required: true },
+  verified: { type: Boolean, default: false },
 });
 
 const Donation = model<IDonation>("Donation", DonationSchema);
