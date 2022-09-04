@@ -103,7 +103,10 @@ class DonationController {
     generated_signature.update(JSON.stringify(req.body));
     const expected_signature = req.headers[`x-razorpay-signature`];
     const digest = generated_signature.digest("hex");
-    console.log(req.body);
+    if (expected_signature === digest) {
+      await Donation.create({ donation: req.body });
+    }
+    res.json({ status: "ok" });
     // if(expected_signature===digest){
 
     // }
@@ -114,73 +117,73 @@ class DonationController {
     //   webhookSecret
     // );
   };
-  private verifyPayment = async (
-    req: express.Request,
-    res: express.Response
-  ) => {
-    const generated_signature = crypto.createHmac(
-      "sha256",
-      process.env.RAZORPAY_KEY_SECRET
-    );
-    const donation = await Donation.findById(req.body.id);
-    console.log(
-      donation.transactionId,
-      donation,
-      donation.transactionId === req.body.razorpay_order_id,
-      req.body.razorpay_order_id
-    );
-    if (donation.type === "o")
-      generated_signature.update(
-        donation.transactionId + "|" + req.body.razorpay_payment_id
-      );
-    else
-      generated_signature.update(
-        req.body.razorpay_payment_id + "|" + donation.transactionId
-      );
-    const expected = generated_signature.digest("hex");
-    console.log(expected);
-    // console.log(
-    //   generated_signature.digest("hex").toString() ===
-    //     req.body.razorpay_signature
-    //   // generated_signature_1.digest()
-    // );
-    // console.log(generated_signature.digest("hex")[0]);
-    // for (let index in req.body.razorpay_signature) {
-    //   if (
-    //     req.body.razorpay_signature[index] !==
-    //     generated_signature.digest("hex")[index]
-    //   )
-    //     console.log(
-    //       "not equal ",
-    //       index,
-    //       req.body.razorpay_signature[index],
-    //       generated_signature.digest("hex")[index]
-    //     );
-    // }
-    if (expected === req.body.razorpay_signature) {
-      // const transaction = new Transaction({
-      //   transactionid: req.body.transactionid,
-      //   transactionamount: req.body.transactionamount,
-      // })
-      donation.verified = true;
-      await donation.save();
-      // await Donation.create({
-      //   transactionId: req.body.transactionid,
-      //   amount: req.body.transactionamount,
-      // });
-      return res.json({ success: true });
-      // transaction.save(function (err, savedtransac) {
-      //   if (err) {
-      //     console.log(err);
-      //     return res.status(500).send("Some Problem Occured");
-      //   }
-      //   res.send({ transaction: savedtransac });
-      // });
-      // return res.send('success');
-    } else {
-      return res.json({ success: false });
-    }
-  };
+  // private verifyPayment = async (
+  //   req: express.Request,
+  //   res: express.Response
+  // ) => {
+  //   const generated_signature = crypto.createHmac(
+  //     "sha256",
+  //     process.env.RAZORPAY_KEY_SECRET
+  //   );
+  //   const donation = await Donation.findById(req.body.id);
+  //   console.log(
+  //     donation.transactionId,
+  //     donation,
+  //     donation.transactionId === req.body.razorpay_order_id,
+  //     req.body.razorpay_order_id
+  //   );
+  //   if (donation.type === "o")
+  //     generated_signature.update(
+  //       donation.transactionId + "|" + req.body.razorpay_payment_id
+  //     );
+  //   else
+  //     generated_signature.update(
+  //       req.body.razorpay_payment_id + "|" + donation.transactionId
+  //     );
+  //   const expected = generated_signature.digest("hex");
+  //   console.log(expected);
+  //   // console.log(
+  //   //   generated_signature.digest("hex").toString() ===
+  //   //     req.body.razorpay_signature
+  //   //   // generated_signature_1.digest()
+  //   // );
+  //   // console.log(generated_signature.digest("hex")[0]);
+  //   // for (let index in req.body.razorpay_signature) {
+  //   //   if (
+  //   //     req.body.razorpay_signature[index] !==
+  //   //     generated_signature.digest("hex")[index]
+  //   //   )
+  //   //     console.log(
+  //   //       "not equal ",
+  //   //       index,
+  //   //       req.body.razorpay_signature[index],
+  //   //       generated_signature.digest("hex")[index]
+  //   //     );
+  //   // }
+  //   if (expected === req.body.razorpay_signature) {
+  //     // const transaction = new Transaction({
+  //     //   transactionid: req.body.transactionid,
+  //     //   transactionamount: req.body.transactionamount,
+  //     // })
+  //     donation.verified = true;
+  //     await donation.save();
+  //     // await Donation.create({
+  //     //   transactionId: req.body.transactionid,
+  //     //   amount: req.body.transactionamount,
+  //     // });
+  //     return res.json({ success: true });
+  //     // transaction.save(function (err, savedtransac) {
+  //     //   if (err) {
+  //     //     console.log(err);
+  //     //     return res.status(500).send("Some Problem Occured");
+  //     //   }
+  //     //   res.send({ transaction: savedtransac });
+  //     // });
+  //     // return res.send('success');
+  //   } else {
+  //     return res.json({ success: false });
+  //   }
+  // };
   // private verifyPayment = async (req, res) => {
   //   const resp = razorPayInstance.payments.paymentVerification(
   //     {
