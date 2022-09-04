@@ -12,6 +12,7 @@ class App {
     this.initializeControllers(controllers);
   }
   private initializeMiddlewares() {
+    this.app.use(cors());
     mongoose
       .connect(
         `mongodb+srv://${config.MONGO_USER}:${config.MONGO_PASSWORD}@cluster0.w471pdz.mongodb.net/?retryWrites=true&w=majority`
@@ -22,7 +23,6 @@ class App {
       .catch((err) => {
         console.log(err);
       });
-    this.app.use(cors());
     // console.log(app);
     this.app.use(express.json());
     // this.app.use(authDecode);
