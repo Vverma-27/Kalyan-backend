@@ -100,7 +100,7 @@ class DonationController {
       "sha256",
       process.env.RAZORPAY_WEBHOOK_SECRET
     );
-    generated_signature.update(req.body);
+    generated_signature.update(JSON.stringify(req.body));
     const expected_signature = req.headers[`x-razorpay-signature`];
     const digest = generated_signature.digest("hex");
     console.log(req.body);
