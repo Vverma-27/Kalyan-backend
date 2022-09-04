@@ -22,13 +22,7 @@ class App {
       .catch((err) => {
         console.log(err);
       });
-    const corsOpts = {
-      origin: "*",
-
-      methods: ["GET", "POST"],
-    };
-
-    this.app.use(cors(corsOpts));
+    this.app.use(cors());
     // console.log(app);
     this.app.use(express.json());
     // this.app.use(authDecode);
