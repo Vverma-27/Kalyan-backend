@@ -13,7 +13,7 @@ class DonationController {
   }
   private initializeRoutes() {
     this.router.get(this.route, this.getAllDonations);
-    this.router.post(`${this.route}/verification`, this.verifyPayment);
+    this.router.post(`${this.route}/verification`, this.handleWebhook);
     this.router.post(`${this.route}`, this.createDonationRequest);
   }
   private createDonationRequest = async (
@@ -31,17 +31,17 @@ class DonationController {
           currency: "INR",
           receipt: uuidv4(),
         });
-        const donation = await Donation.create({
-          transactionId: order.id,
-          amount: order.amount,
-          type: "o",
-          // identifier,
-        });
+        // const donation = await Donation.create({
+        //   transactionId: order.id,
+        //   amount: order.amount,
+        //   type: "o",
+        //   // identifier,
+        // });
         res.json({
           order_id: order.id,
           amount: order.amount,
           currency: order.currency,
-          id: donation.id,
+          // id: donation.id,
         });
         // await Donation.create({
         //   date: new Date(order.created_at),
@@ -67,17 +67,17 @@ class DonationController {
           quantity: 1,
           total_count: 1,
         });
-        const donation = await Donation.create({
-          transactionId: subs.id,
-          amount,
-          type: "r",
-          // identifier,
-        });
+        // const donation = await Donation.create({
+        //   transactionId: subs.id,
+        //   amount,
+        //   type: "r",
+        //   // identifier,
+        // });
         res.json({
           subscription_id: subs.id,
           amount: amount,
           currency: "INR",
-          id: donation.id,
+          // id: donation.id,
         });
         // await Donation.create({
         //   date: new Date(subs.created_at),
@@ -91,6 +91,28 @@ class DonationController {
       console.log(err);
       res.status(500).send(err);
     }
+  };
+  private handleWebhook = async (
+    req: express.Request,
+    res: express.Response
+  ) => {
+    const generated_signature = crypto.createHmac(
+      "sha256",
+      process.env.RAZORPAY_WEBHOOK_SECRET
+    );
+    generated_signature.update(req.body);
+    const expected_signature = req.headers[`x-razorpay-signature`];
+    const digest = generated_signature.digest("hex");
+    console.log(req.body);
+    // if(expected_signature===digest){
+
+    // }
+    // console.log()
+    // const response = validateWebhookSignature(
+    //   JSON.stringify(req.body),
+    //   webhookSignature,
+    //   webhookSecret
+    // );
   };
   private verifyPayment = async (
     req: express.Request,
