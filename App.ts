@@ -14,7 +14,7 @@ class App {
   private initializeMiddlewares() {
     mongoose
       .connect(
-        `mongodb://${config.MONGO_USER}:${config.MONGO_PASSWORD}@${config.MONGO_IP}:${config.MONGO_PORT}/?authSource=admin`
+        `mongodb+srv://${config.MONGO_USER}:${config.MONGO_PASSWORD}@cluster0.w471pdz.mongodb.net/?retryWrites=true&w=majority`
       )
       .then(() => {
         console.log("logged in to mongo");
