@@ -107,7 +107,12 @@ class DonationController {
     generated_signature.update(JSON.stringify(req.body));
     const expected_signature = req.headers[`x-razorpay-signature`];
     const digest = generated_signature.digest("hex");
-    if (expected_signature === digest) {
+    console.log("cid ", req.body.payload.payment.entity.customer_id);
+    if (
+      expected_signature === digest &&
+      req.body.event === "payment.captured" &&
+      !req.body.payload.payment.entity.customer_id
+    ) {
       await Donation.create({ donation: req.body });
     }
     res.json({ status: "ok" });
