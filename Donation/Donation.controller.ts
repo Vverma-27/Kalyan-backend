@@ -26,6 +26,7 @@ class DonationController {
       //@ts-ignore
       let { amount, frequency, identifier } = req.body;
       amount = parseInt(amount);
+      console.log(process.env.RAZORPAY_KEY_SECRET, process.env.RAZORPAY_KEY_ID);
       console.log(amount);
       if (frequency === "one-time") {
         const order = await razorPayInstance.orders.create({
