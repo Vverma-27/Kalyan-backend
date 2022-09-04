@@ -21,6 +21,8 @@ class DonationController {
     res: express.Response
   ) => {
     try {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
       //@ts-ignore
       let { amount, frequency, identifier } = req.body;
       amount = parseInt(amount);
@@ -96,6 +98,8 @@ class DonationController {
     req: express.Request,
     res: express.Response
   ) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
     const generated_signature = crypto.createHmac(
       "sha256",
       process.env.RAZORPAY_WEBHOOK_SECRET
